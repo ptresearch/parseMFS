@@ -51,8 +51,9 @@ class zipStorage(object):
 
   def add(self, path, data=None):
     if self.baseDir: path = posixpath.join(self.baseDir, path)
+    if data is None: path += posixpath.sep # Folder
     zi = zipfile.ZipInfo(path)
-    if data is None: zi.external_attr = 0x30 # Folder
+    zi.external_attr = (040755 << 16) | 0x30 if data is None else (0644 << 16) # Assign permissions
     self.z.writestr(zi, data or "")
     del zi
 
@@ -390,7 +391,7 @@ class MFS(object):
     for iChunk in xrange(self.nSysChunks):
       if iChunk in self.dChunks: abSys[iChunk*self.CHUNK_SIZE:(iChunk+1)*self.CHUNK_SIZE] = bytearray(self.dChunks[iChunk])
 
-    self.aFAT = struct.unpack_from("<%dH" % (self.nFiles + self.nDataChunks), abSys, self.fmtVolHdr.size)
+    self.aFAT = struct.unpack_from("<%dH" % (self.nFiles + self.nDataChunks), str(abSys), self.fmtVolHdr.size)
     return
 
     print str(abSys[:self.fmtVolHdr.size]).encode("hex")
